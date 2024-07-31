@@ -7,26 +7,36 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"github.com/jimsyyap/bnb_go/pkg/config"
 )
 
 var functions = template.FuncMap{}
+var app *config.AppConfig
+
+// sets the confi for the template package
+func NewTemplates(a *config.AppConfig) {
+	// assign the appconfig to the package level variable
+	app = a
+}
 
 func RenderTemplate(w http.ResponseWriter, tmpl string) {
-
-	tc, err := CreateTemplateCache()
-	if err != nil {
-		log.Fatal(err) //stops the application at this point
+	var tc map[string]*template.Template
+	if app.UseCache {
+		tc = app.TemplateCache
+	} else {
+		tc, _ = CreateTemplateCache()
 	}
 
 	t, ok := tc[tmpl]
 	if !ok {
-		log.Fatal(err)
+		log.Fatal("could not get template from template cache")
 	}
 
 	buf := new(bytes.Buffer)
 
 	_ = t.Execute(buf, nil)
-	_, err = buf.WriteTo(w)
+	_, err := buf.WriteTo(w)
 	if err != nil {
 		fmt.Println("error writing template to browser", err)
 	}
